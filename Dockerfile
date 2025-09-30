@@ -3,11 +3,16 @@ RUN apk add --no-cache \
   binutils
 RUN strip --strip-unneeded /app/opengist/opengist
 
-FROM alpine:3 AS final
-COPY --from=opengist /app/opengist/opengist /app/opengist/opengist
-RUN apk add --no-cache curl git openssh-server
+FROM alpine AS git
+RUN apk add --no-cache \
+  git
 RUN git config --global --add safe.directory '/opengist' && \
     git config --global receive.advertisePushOptions true
+
+FROM alpine:3 AS final
+COPY --from=opengist /app/opengist/opengist /app/opengist/opengist
+COPY --from=git /root/.gitconfig /.gitconfig
+RUN apk add --no-cache curl git openssh-server
 ENV OG_OPENGIST_HOME=/opengist
 EXPOSE 6157 2222
 VOLUME /opengist
